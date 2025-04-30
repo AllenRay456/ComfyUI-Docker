@@ -157,7 +157,7 @@ RUN du -ah /root \
 COPY runner-scripts/.  /runner-scripts/
 
 USER root
-VOLUME /root
+VOLUME ["/root/ComfyUI"]
 WORKDIR /root
 EXPOSE 8188
 ENV CLI_ARGS="--cpu"

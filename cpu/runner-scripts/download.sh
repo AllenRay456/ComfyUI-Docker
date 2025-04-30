@@ -1,4 +1,14 @@
 #!/bin/bash
+################################################################################
+# ComfyUI 初始化脚本
+# 
+# 使用方法:
+# 1. 创建命名卷:
+#    docker volume create comfyui-data
+#
+# 2. 运行容器:
+#    docker run -v comfyui-data:/root/ComfyUI ... 其他参数
+################################################################################
 
 set -euo pipefail
 
@@ -17,35 +27,44 @@ function clone_or_pull () {
     fi ;
 }
 
+# 检查 ComfyUI 目录是否为空
+if [ ! -d "/root/ComfyUI" ] || [ -z "$(ls -A /root/ComfyUI)" ]; then
+    echo "########################################"
+    echo "[INFO] ComfyUI directory is empty, initializing..."
+    echo "########################################"
 
-echo "########################################"
-echo "[INFO] Downloading ComfyUI & Manager..."
-echo "########################################"
+    echo "########################################"
+    echo "[INFO] Downloading ComfyUI & Manager..."
+    echo "########################################"
 
-set +e
-cd /root
-git clone https://github.com/comfyanonymous/ComfyUI.git || git -C "ComfyUI" pull --ff-only
-cd /root/ComfyUI
-# Using stable version (has a release tag)
-git reset --hard "$(git tag | grep -e '^v' | sort -V | tail -1)"
-set -e
+    set +e
+    cd /root
+    git clone https://github.com/comfyanonymous/ComfyUI.git
+    cd /root/ComfyUI
+    # Using stable version (has a release tag)
+    git reset --hard "$(git tag | grep -e '^v' | sort -V | tail -1)"
+    set -e
 
-cd /root/ComfyUI/custom_nodes
-clone_or_pull https://github.com/ltdrdata/ComfyUI-Manager.git
+    cd /root/ComfyUI/custom_nodes
+    clone_or_pull https://github.com/ltdrdata/ComfyUI-Manager.git
 
+    echo "########################################"
+    echo "[INFO] Downloading Models..."
+    echo "########################################"
 
-echo "########################################"
-echo "[INFO] Downloading Models..."
-echo "########################################"
+    # Models
+    cd /root/ComfyUI/models
+    aria2c \
+      --input-file=/runner-scripts/download-models.txt \
+      --allow-overwrite=false \
+      --auto-file-renaming=false \
+      --continue=true \
+      --max-connection-per-server=5
 
-# Models
-cd /root/ComfyUI/models
-aria2c \
-  --input-file=/runner-scripts/download-models.txt \
-  --allow-overwrite=false \
-  --auto-file-renaming=false \
-  --continue=true \
-  --max-connection-per-server=5
-
-# Finish
-touch /root/.download-complete
+    # Finish
+    touch /root/ComfyUI/.download-complete
+else
+    echo "########################################"
+    echo "[INFO] ComfyUI directory already initialized, skipping download..."
+    echo "########################################"
+fi
