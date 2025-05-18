@@ -2,8 +2,6 @@ name: Publish 'cpu' to Docker Hub
 
 on: 
   workflow_dispatch: # Can be manually triggered
-  schedule: # Runs on every Monday, 07:00 UTC
-    - cron: '0 7 * * 1'
   push: 
     branches: [ main ]
     paths-ignore:
@@ -51,6 +49,5 @@ jobs:
           context: ./cpu
           file: ./cpu/Dockerfile
           tags:  |
-            yanwk/comfyui-boot:cpu
-            yanwk/comfyui-boot:cpu-${{ steps.date.outputs.date }}
+            rayme2090/comfyui-cpu-image:cpu-${{ steps.date.outputs.date }}
           push: true
